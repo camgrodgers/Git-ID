@@ -7,7 +7,7 @@ description = "Manages git user emails and names"
 repository = "https://github.com/camgrodgers/gitid"
 keywords = ["git"]
 categories = ["command-line-utilities"]
-license = "AGPL"
+license = "AGPL-3.0"
 
 [[bin]]
 path = "src/main.rs"
