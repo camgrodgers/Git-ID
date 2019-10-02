@@ -9,10 +9,7 @@ use std::io::prelude::*;
 use std::process::Command;
 use std::str::FromStr;
 
-
-
-
-
+// TODO: what exactly is partialeq?
 #[derive(Serialize, Deserialize, PartialEq, Clone)]
 struct GitId {
     email: String,
@@ -38,10 +35,10 @@ fn main() {
                      .required(true)
                      .index(1)))
         .subcommand(SubCommand::with_name("remove")
-                    .about("Remove the specified user id.")
-                    .arg(Arg::with_name("number")
-                         .required(true)
-                         .index(1)))
+                .about("Remove the specified user id.")
+                .arg(Arg::with_name("number")
+                     .required(true)
+                     .index(1)))
         .subcommand(SubCommand::with_name("add")
                     .about("Add an email and name to the .gitid dotfile.")
                     .arg(Arg::with_name("email")
@@ -90,11 +87,11 @@ fn main() {
                     return;
                 }
                 let id = &ids[number];
-                let email_output = Command::new("git")
+                let _email_output = Command::new("git")
                     .args(&["config", "user.email", &id.email])
                     .output()
                     .expect("Problem executing git command.");
-                let name_output = Command::new("git")
+                let _name_output = Command::new("git")
                     .args(&["config", "user.name", &format!("\"{}\"", id.name)])
                     .output()
                     .expect("Problem executing git command.");
@@ -106,10 +103,31 @@ fn main() {
             }
         }
     }
+
+    if let Some(matches) = matches.subcommand_matches("remove") {
+        let number = matches.value_of("number").unwrap();
+        let number = usize::from_str(number).unwrap();
+        match read_ids() {
+            Some(mut ids) => {
+                if number >= ids.len() {
+                    println!("Invalid index.");
+                    return;
+                }
+                ids.remove(number);
+                let ids2 = ids.clone();
+                write_ids(ids);
+                list_ids(ids2);
+            }
+            None => {
+                println!("No index given.");
+            }
+        }
+    }
 }
 
 fn write_ids(ids: Vec<GitId>) {
-    let json = serde_json::to_string(&GitIds{ ids: ids}).unwrap();
+    let mut json = serde_json::to_string(&GitIds{ ids: ids}).unwrap();
+    json.push('\n');
     let mut path = dirs::home_dir().unwrap();
     path.push(".gitid");
     let mut file = File::create(path).unwrap();
@@ -134,7 +152,7 @@ fn list_ids(ids: Vec<GitId>) {
         println!("no Git IDs have been added yet.");
     } else { 
         for (i, id) in ids.iter().enumerate() {
-            println!("{}. Email: {}\n   Name: {}", i, id.email, id.name);
+            println!("{}. Email: {}\n   Name : {}", i, id.email, id.name);
         }
     }
 }
