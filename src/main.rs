@@ -27,7 +27,6 @@ use std::io::prelude::*;
 use std::process::Command;
 use std::str::FromStr;
 
-// TODO: what exactly is partialeq?
 #[derive(Serialize, Deserialize, PartialEq, Clone)]
 struct GitId {
     email: String,
@@ -39,7 +38,6 @@ struct GitIds {
     ids: Vec<GitId>,
 }
 
-// TODO: Get rid of the unwraps later
 fn main() {
     let matches = App::new("Git ID")
         .version("0.1.0")
@@ -52,7 +50,7 @@ fn main() {
                 .arg(Arg::with_name("number")
                      .required(true)
                      .index(1)))
-        .subcommand(SubCommand::with_name("remove")
+        .subcommand(SubCommand::with_name("remove") // TODO: allow removing multiple ids at once?
                 .about("Remove the specified user id.")
                 .arg(Arg::with_name("number")
                      .required(true)
@@ -70,7 +68,7 @@ fn main() {
         .get_matches();
 
     if let Some(_) = matches.subcommand_matches("list") {
-        match read_ids() {
+        match read_ids(String::from(".gitid")) {
             Some(ids) => {
                 list_ids(ids);
             }
@@ -82,50 +80,65 @@ fn main() {
 
     if let Some(matches) = matches.subcommand_matches("add") {
         let email = matches.value_of("email").unwrap();
-        let name = matches.value_of("name").unwrap(); // TODO: email validation?
+        let name = matches.value_of("name").unwrap();
         let new_id = GitId{ email: String::from(email), name: String::from(name)};
-        let mut ids = read_ids().unwrap_or(Vec::new());
+        let mut ids = read_ids(String::from(".gitid")).unwrap_or(Vec::new());
         if ! ids.contains(&new_id) {
             ids.push(new_id);
-            // TODO: sort
-            // ids.sort_by_key(|id| { &id.email} );
+            ids.sort_by(|a, b| a.email.cmp(&b.email) );
         }
         let ids2 = ids.clone(); // TODO: Find better workaround rather than cloning
-        write_ids(ids);
+        write_ids(ids, String::from(".gitid"));
         list_ids(ids2);
     }
 
     if let Some(matches) = matches.subcommand_matches("set") {
         let number = matches.value_of("number").unwrap();
-        let number = usize::from_str(number).unwrap();
-        match read_ids() {
+        let number = match usize::from_str(number) {
+            Ok(n) => n,
+            Err(_) => {
+                println!("Passed invalid argument.");
+                return;
+            },
+        };
+        match read_ids(String::from(".gitid")) {
             Some(ids) => {
                 if number >= ids.len() {
                     println!("Invalid index.");
                     return;
                 }
                 let id = &ids[number];
-                let _email_output = Command::new("git")
+                match Command::new("git")
                     .args(&["config", "user.email", &id.email])
                     .output()
-                    .expect("Problem executing git command.");
-                let _name_output = Command::new("git")
+                    {
+                        Ok(_) => println!("Set email in current repo."),
+                        Err(_) => println!("Failed to set email in current repo."),
+                };
+                match Command::new("git")
                     .args(&["config", "user.name", &format!("\"{}\"", id.name)])
                     .output()
-                    .expect("Problem executing git command.");
-                //println!("{:?}", email_output.stdout);
-                //println!("{:?}", name_output.stdout);
+                    {
+                        Ok(_) => println!("Set name in current repo."),
+                        Err(_) => println!("Failed to set name in current repo."),
+                };
             }
             None => {
-                println!("No index given.");
+                println!("There were no ids stored in .gitid.");
             }
         }
     }
 
     if let Some(matches) = matches.subcommand_matches("remove") {
         let number = matches.value_of("number").unwrap();
-        let number = usize::from_str(number).unwrap();
-        match read_ids() {
+        let number = match usize::from_str(number) {
+            Ok(n) => n,
+            Err(_) => {
+                println!("Passed invalid argument.");
+                return;
+            },
+        };
+        match read_ids(String::from(".gitid")) {
             Some(mut ids) => {
                 if number >= ids.len() {
                     println!("Invalid index.");
@@ -133,28 +146,28 @@ fn main() {
                 }
                 ids.remove(number);
                 let ids2 = ids.clone();
-                write_ids(ids);
+                write_ids(ids, String::from(".gitid"));
                 list_ids(ids2);
             }
             None => {
-                println!("No index given.");
+                println!("There were no ids stored in .gitid.");
             }
         }
     }
 }
 
-fn write_ids(ids: Vec<GitId>) {
+fn write_ids(ids: Vec<GitId>, filename: String) {
     let mut json = serde_json::to_string(&GitIds{ ids: ids}).unwrap();
     json.push('\n');
     let mut path = dirs::home_dir().unwrap();
-    path.push(".gitid");
+    path.push(filename);
     let mut file = File::create(path).unwrap();
     file.write_all(json.as_bytes()).unwrap();
 }
 
-fn read_ids() -> Option<Vec<GitId>> {
+fn read_ids(filename: String) -> Option<Vec<GitId>> {
     let mut path = dirs::home_dir().unwrap();
-    path.push(".gitid");
+    path.push(filename);
     match fs::read_to_string(path) {
         Ok(contents) => {
             let ids: GitIds = serde_json::from_str(&contents).unwrap();
