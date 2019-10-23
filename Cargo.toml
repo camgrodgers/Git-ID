@@ -5,6 +5,7 @@ authors = ["Your Name"]
 edition = "2018"
 description = "Manages git user emails and names"
 repository = "https://github.com/camgrodgers/gitid"
+readme = "README.md"
 keywords = ["git"]
 categories = ["command-line-utilities"]
 license = "AGPL-3.0"

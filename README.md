@@ -2,6 +2,35 @@
 
 Manage emails and names for git.
 
+### Summary
+
+This is a CLI tool for storing the git id info user.name and user.email, and setting the info in repos individually.
+It should be of some use to programmers who need to manage multiple identities across multiple git repos.
+From a security point of view, it has the advantage of making it easier to manage multiple identities,
+ but the drawback of storing them all in a single file, which will allow anyone who reads it to 
+ infer that all of the identities in the file are the same person.
+
+Gitid stores ids in a .gitid dotfile in the home directory.
+
+##### Example:
+```
+[u gitid]$ gitid list
+Git IDs:
+0. Email: bobby@humans.com
+   Name : Bobby
+[u gitid]$ gitid add -e lizzie@lizards.net -n Lizzie
+Git IDs:
+0. Email: bobby@humans.com
+   Name : Bobby
+1. Email: lizzie@lizards.net
+   Name : Lizzie
+[u gitid]$ gitid set 0 
+[u gitid]$ gitid remove 1
+Git IDs:
+0. Email: bobby@humans.com
+   Name : Bobby
+```
+
 ### Installation
 
 ```
