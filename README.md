@@ -4,7 +4,7 @@ Manage emails and names for git.
 
 ### Summary
 
-This is a CLI tool for storing the git id info user.name and user.email, and setting the info in repos individually.
+This is a CLI tool for storing the git identity info user.name and user.email, and setting the info in repos individually.
 It should be of some use to programmers who need to manage multiple identities across multiple git repos.
 From a security point of view, it has the advantage of making it easier to manage multiple identities,
  but the drawback of storing them all in a single file, which will allow anyone who reads it to 
